@@ -1,0 +1,22 @@
+# Core
+torch>=2.1.0
+transformers>=4.44.0
+datasets>=2.20.0
+accelerate>=0.33.0
+
+# Quantisation for running Llama 8B on a single GPU
+bitsandbytes>=0.43.0
+
+# Annotation backend
+requests>=2.31.0
+tqdm>=4.66.0
+
+# Data and evaluation
+pandas>=2.0.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+matplotlib>=3.7.0
+seaborn>=0.13.0
+
+# Agreement statistics for the human verification study
+statsmodels>=0.14.0

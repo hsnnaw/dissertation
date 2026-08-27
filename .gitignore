@@ -1,0 +1,26 @@
+# Data is never committed. Reddit text is reverse-searchable, so a public repo
+# containing raw posts would de-anonymise the authors regardless of the
+# anonymisation applied elsewhere.
+data/raw/
+data/interim/
+data/processed/
+*.jsonl
+*.csv
+*.parquet
+
+# Model artefacts
+models/
+checkpoints/
+*.bin
+*.safetensors
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+.pytest_cache/
+
+# OS
+.DS_Store
