@@ -1,0 +1,492 @@
+{
+  "benchmark": {
+    "total": 51,
+    "positive": 32,
+    "contested": 19,
+    "by_slice": {
+      "explicit_diagnosis": 4,
+      "explicit_treatment": 4,
+      "explicit_help_seeking": 3,
+      "implicit_symptom": 6,
+      "implicit_consequence": 5,
+      "recovery": 4,
+      "third_party": 6,
+      "news": 4,
+      "supportive": 3,
+      "quoting": 3,
+      "physical_ambiguity": 4,
+      "control": 5
+    },
+    "by_directness": {
+      "explicit": 13,
+      "implicit": 19,
+      "not_applicable": 19
+    },
+    "by_type": {
+      "diagnosis": 4,
+      "treatment": 7,
+      "help_seeking": 2,
+      "symptom": 15,
+      "recovery": 4,
+      "none": 19
+    }
+  },
+  "results": [
+    {
+      "strategy": "cot",
+      "disclosure_acc": 0.745,
+      "clear_acc": 0.875,
+      "contested_acc": 0.526,
+      "precision": 0.857,
+      "recall": 0.8,
+      "f1": 0.828,
+      "directness_acc": 0.708,
+      "type_acc": 0.792,
+      "parse_failures": 3,
+      "mean_latency_s": 5.78,
+      "confusion": {
+        "tp": 24,
+        "fp": 4,
+        "tn": 14,
+        "fn": 6
+      },
+      "per_slice": {
+        "control": 0.6,
+        "explicit_diagnosis": 0.75,
+        "explicit_help_seeking": 1.0,
+        "explicit_treatment": 0.75,
+        "implicit_consequence": 0.6,
+        "implicit_symptom": 0.833,
+        "news": 1.0,
+        "physical_ambiguity": 0.75,
+        "quoting": 1.0,
+        "recovery": 0.75,
+        "supportive": 1.0,
+        "third_party": 0.333
+      },
+      "errors": [
+        {
+          "text": "I was told it was probably bipolar II rather than recurrent depression",
+          "slice": "explicit_diagnosis",
+          "contested": false,
+          "expected": true,
+          "got": "PARSE FAILURE: is_disclosure=true with type 'none'",
+          "note": "diagnosis with hedging language"
+        },
+        {
+          "text": "Two weeks as a voluntary inpatient. Would not describe it as restful b",
+          "slice": "explicit_treatment",
+          "contested": false,
+          "expected": "True/treatment/explicit",
+          "got": "False/none/not_applicable",
+          "note": "hospitalisation, no condition named"
+        },
+        {
+          "text": "Everything is fine. Genuinely. I do not know why I am typing this at 3",
+          "slice": "implicit_symptom",
+          "contested": true,
+          "expected": "True/symptom/implicit",
+          "got": "False/none/not_applicable",
+          "note": "denial with contradicting context"
+        },
+        {
+          "text": "Been off work six weeks. The GP signed me off again yesterday for anot",
+          "slice": "implicit_consequence",
+          "contested": true,
+          "expected": "True/symptom/implicit",
+          "got": "False/none/not_applicable",
+          "note": "absence with no named cause, could be physical"
+        },
+        {
+          "text": "My sister has taken the kids for the weekend so I can, in her words, s",
+          "slice": "implicit_consequence",
+          "contested": true,
+          "expected": "True/symptom/implicit",
+          "got": "False/none/not_applicable",
+          "note": "disclosure via someone else's action"
+        },
+        {
+          "text": "One year today. Not going to make a speech about it but it felt worth ",
+          "slice": "recovery",
+          "contested": true,
+          "expected": true,
+          "got": "PARSE FAILURE: is_disclosure=true with type 'none'",
+          "note": "milestone, subject entirely unstated"
+        },
+        {
+          "text": "My dad was sectioned in the nineties and we still do not really talk a",
+          "slice": "third_party",
+          "contested": false,
+          "expected": false,
+          "got": "PARSE FAILURE: is_disclosure=false with directness 'implicit'",
+          "note": "family member, historical"
+        },
+        {
+          "text": "My partner takes lithium and the blood tests are relentless. Does anyo",
+          "slice": "third_party",
+          "contested": true,
+          "expected": "False/none/not_applicable",
+          "got": "True/symptom/implicit",
+          "note": "third party medication, author reports own exhaustion"
+        },
+        {
+          "text": "Watching my brother go through this has been the hardest year of my li",
+          "slice": "third_party",
+          "contested": true,
+          "expected": "True/symptom/implicit",
+          "got": "False/none/not_applicable",
+          "note": "starts third party, pivots to own state"
+        },
+        {
+          "text": "Everyone in my family has anxiety. It is basically the house style at ",
+          "slice": "third_party",
+          "contested": true,
+          "expected": "True/symptom/implicit",
+          "got": "False/none/not_applicable",
+          "note": "family framing that includes the author"
+        },
+        {
+          "text": "The headaches are back and the GP wants more tests before referring me",
+          "slice": "physical_ambiguity",
+          "contested": true,
+          "expected": "False/none/not_applicable",
+          "got": "True/symptom/implicit",
+          "note": "physical symptom, medical but not mental health"
+        },
+        {
+          "text": "Third time this month the 07:42 has been cancelled. Considering taking",
+          "slice": "control",
+          "contested": false,
+          "expected": "False/none/not_applicable",
+          "got": "True/symptom/implicit",
+          "note": "frustration, non-clinical, tests over-triggering"
+        },
+        {
+          "text": "I am so depressed that Arsenal dropped points again. Genuinely ruined ",
+          "slice": "control",
+          "contested": true,
+          "expected": "False/none/not_applicable",
+          "got": "True/symptom/implicit",
+          "note": "colloquial 'depressed', key lexical false positive"
+        }
+      ],
+      "run": 1
+    },
+    {
+      "strategy": "few_shot",
+      "disclosure_acc": 0.902,
+      "clear_acc": 1.0,
+      "contested_acc": 0.737,
+      "precision": 0.935,
+      "recall": 0.906,
+      "f1": 0.921,
+      "directness_acc": 0.966,
+      "type_acc": 0.862,
+      "parse_failures": 0,
+      "mean_latency_s": 1.78,
+      "confusion": {
+        "tp": 29,
+        "fp": 2,
+        "tn": 17,
+        "fn": 3
+      },
+      "per_slice": {
+        "control": 0.8,
+        "explicit_diagnosis": 1.0,
+        "explicit_help_seeking": 1.0,
+        "explicit_treatment": 1.0,
+        "implicit_consequence": 0.8,
+        "implicit_symptom": 1.0,
+        "news": 1.0,
+        "physical_ambiguity": 0.75,
+        "quoting": 1.0,
+        "recovery": 1.0,
+        "supportive": 1.0,
+        "third_party": 0.667
+      },
+      "errors": [
+        {
+          "text": "My sister has taken the kids for the weekend so I can, in her words, s",
+          "slice": "implicit_consequence",
+          "contested": true,
+          "expected": "True/symptom/implicit",
+          "got": "False/none/not_applicable",
+          "note": "disclosure via someone else's action"
+        },
+        {
+          "text": "Watching my brother go through this has been the hardest year of my li",
+          "slice": "third_party",
+          "contested": true,
+          "expected": "True/symptom/implicit",
+          "got": "False/none/not_applicable",
+          "note": "starts third party, pivots to own state"
+        },
+        {
+          "text": "Everyone in my family has anxiety. It is basically the house style at ",
+          "slice": "third_party",
+          "contested": true,
+          "expected": "True/symptom/implicit",
+          "got": "False/none/not_applicable",
+          "note": "family framing that includes the author"
+        },
+        {
+          "text": "The headaches are back and the GP wants more tests before referring me",
+          "slice": "physical_ambiguity",
+          "contested": true,
+          "expected": "False/none/not_applicable",
+          "got": "True/symptom/explicit",
+          "note": "physical symptom, medical but not mental health"
+        },
+        {
+          "text": "This weather is doing my head in. Fourth grey week in a row.",
+          "slice": "control",
+          "contested": true,
+          "expected": "False/none/not_applicable",
+          "got": "True/symptom/implicit",
+          "note": "idiomatic distress language, non-clinical"
+        }
+      ],
+      "run": 1
+    },
+    {
+      "strategy": "few_shot_cot",
+      "disclosure_acc": 0.765,
+      "clear_acc": 0.875,
+      "contested_acc": 0.579,
+      "precision": 0.763,
+      "recall": 0.906,
+      "f1": 0.829,
+      "directness_acc": 0.862,
+      "type_acc": 0.793,
+      "parse_failures": 0,
+      "mean_latency_s": 7.51,
+      "confusion": {
+        "tp": 29,
+        "fp": 9,
+        "tn": 10,
+        "fn": 3
+      },
+      "per_slice": {
+        "control": 0.0,
+        "explicit_diagnosis": 1.0,
+        "explicit_help_seeking": 1.0,
+        "explicit_treatment": 1.0,
+        "implicit_consequence": 1.0,
+        "implicit_symptom": 1.0,
+        "news": 1.0,
+        "physical_ambiguity": 0.5,
+        "quoting": 0.667,
+        "recovery": 1.0,
+        "supportive": 1.0,
+        "third_party": 0.333
+      },
+      "errors": [
+        {
+          "text": "My partner takes lithium and the blood tests are relentless. Does anyo",
+          "slice": "third_party",
+          "contested": true,
+          "expected": "False/none/not_applicable",
+          "got": "True/symptom/implicit",
+          "note": "third party medication, author reports own exhaustion"
+        },
+        {
+          "text": "Watching my brother go through this has been the hardest year of my li",
+          "slice": "third_party",
+          "contested": true,
+          "expected": "True/symptom/implicit",
+          "got": "False/none/not_applicable",
+          "note": "starts third party, pivots to own state"
+        },
+        {
+          "text": "A friend asked me to post this for her because she does not want to ma",
+          "slice": "third_party",
+          "contested": false,
+          "expected": "False/none/not_applicable",
+          "got": "True/symptom/implicit",
+          "note": "proxy posting, disclosure belongs to another"
+        },
+        {
+          "text": "Everyone in my family has anxiety. It is basically the house style at ",
+          "slice": "third_party",
+          "contested": true,
+          "expected": "True/symptom/implicit",
+          "got": "False/none/not_applicable",
+          "note": "family framing that includes the author"
+        },
+        {
+          "text": "Someone said to me last week that I seemed lighter. I have been turnin",
+          "slice": "quoting",
+          "contested": true,
+          "expected": "True/recovery/implicit",
+          "got": "False/none/not_applicable",
+          "note": "quoted observation about the author"
+        },
+        {
+          "text": "Lost about a stone without trying. Should probably get that looked at.",
+          "slice": "physical_ambiguity",
+          "contested": true,
+          "expected": "False/none/not_applicable",
+          "got": "True/help_seeking/explicit",
+          "note": "weight change with no mental health framing"
+        },
+        {
+          "text": "The headaches are back and the GP wants more tests before referring me",
+          "slice": "physical_ambiguity",
+          "contested": true,
+          "expected": "False/none/not_applicable",
+          "got": "True/symptom/explicit",
+          "note": "physical symptom, medical but not mental health"
+        },
+        {
+          "text": "Anyone got recommendations for a decent noise cancelling headset for a",
+          "slice": "control",
+          "contested": false,
+          "expected": "False/none/not_applicable",
+          "got": "True/treatment/explicit",
+          "note": "unrelated"
+        },
+        {
+          "text": "Third time this month the 07:42 has been cancelled. Considering taking",
+          "slice": "control",
+          "contested": false,
+          "expected": "False/none/not_applicable",
+          "got": "True/symptom/implicit",
+          "note": "frustration, non-clinical, tests over-triggering"
+        },
+        {
+          "text": "Made sourdough for the first time and it came out like a frisbee. Wher",
+          "slice": "control",
+          "contested": false,
+          "expected": "False/none/not_applicable",
+          "got": "True/symptom/implicit",
+          "note": "unrelated with mild self-criticism"
+        },
+        {
+          "text": "I am so depressed that Arsenal dropped points again. Genuinely ruined ",
+          "slice": "control",
+          "contested": true,
+          "expected": "False/none/not_applicable",
+          "got": "True/symptom/implicit",
+          "note": "colloquial 'depressed', key lexical false positive"
+        },
+        {
+          "text": "This weather is doing my head in. Fourth grey week in a row.",
+          "slice": "control",
+          "contested": true,
+          "expected": "False/none/not_applicable",
+          "got": "True/symptom/implicit",
+          "note": "idiomatic distress language, non-clinical"
+        }
+      ],
+      "run": 1
+    },
+    {
+      "strategy": "zero_shot",
+      "disclosure_acc": 0.824,
+      "clear_acc": 0.938,
+      "contested_acc": 0.632,
+      "precision": 0.96,
+      "recall": 0.75,
+      "f1": 0.842,
+      "directness_acc": 0.75,
+      "type_acc": 0.833,
+      "parse_failures": 0,
+      "mean_latency_s": 2.09,
+      "confusion": {
+        "tp": 24,
+        "fp": 1,
+        "tn": 18,
+        "fn": 8
+      },
+      "per_slice": {
+        "control": 1.0,
+        "explicit_diagnosis": 1.0,
+        "explicit_help_seeking": 0.667,
+        "explicit_treatment": 1.0,
+        "implicit_consequence": 0.8,
+        "implicit_symptom": 0.667,
+        "news": 1.0,
+        "physical_ambiguity": 0.75,
+        "quoting": 0.667,
+        "recovery": 0.75,
+        "supportive": 1.0,
+        "third_party": 0.667
+      },
+      "errors": [
+        {
+          "text": "Looking for a therapist in the Guildford area who does evening appoint",
+          "slice": "explicit_help_seeking",
+          "contested": false,
+          "expected": "True/help_seeking/explicit",
+          "got": "False/none/not_applicable",
+          "note": "seeking treatment, implies own need"
+        },
+        {
+          "text": "I keep cancelling on people. Third time this month. They have stopped ",
+          "slice": "implicit_symptom",
+          "contested": false,
+          "expected": "True/symptom/implicit",
+          "got": "False/none/not_applicable",
+          "note": "withdrawal, nothing named"
+        },
+        {
+          "text": "Everything is fine. Genuinely. I do not know why I am typing this at 3",
+          "slice": "implicit_symptom",
+          "contested": true,
+          "expected": "True/symptom/implicit",
+          "got": "False/none/not_applicable",
+          "note": "denial with contradicting context"
+        },
+        {
+          "text": "My sister has taken the kids for the weekend so I can, in her words, s",
+          "slice": "implicit_consequence",
+          "contested": true,
+          "expected": "True/symptom/implicit",
+          "got": "False/none/not_applicable",
+          "note": "disclosure via someone else's action"
+        },
+        {
+          "text": "One year today. Not going to make a speech about it but it felt worth ",
+          "slice": "recovery",
+          "contested": true,
+          "expected": "True/recovery/implicit",
+          "got": "False/none/not_applicable",
+          "note": "milestone, subject entirely unstated"
+        },
+        {
+          "text": "Watching my brother go through this has been the hardest year of my li",
+          "slice": "third_party",
+          "contested": true,
+          "expected": "True/symptom/implicit",
+          "got": "False/none/not_applicable",
+          "note": "starts third party, pivots to own state"
+        },
+        {
+          "text": "Everyone in my family has anxiety. It is basically the house style at ",
+          "slice": "third_party",
+          "contested": true,
+          "expected": "True/symptom/implicit",
+          "got": "False/none/not_applicable",
+          "note": "family framing that includes the author"
+        },
+        {
+          "text": "Someone said to me last week that I seemed lighter. I have been turnin",
+          "slice": "quoting",
+          "contested": true,
+          "expected": "True/recovery/implicit",
+          "got": "False/none/not_applicable",
+          "note": "quoted observation about the author"
+        },
+        {
+          "text": "The headaches are back and the GP wants more tests before referring me",
+          "slice": "physical_ambiguity",
+          "contested": true,
+          "expected": "False/none/not_applicable",
+          "got": "True/symptom/implicit",
+          "note": "physical symptom, medical but not mental health"
+        }
+      ],
+      "run": 1
+    }
+  ]
+}

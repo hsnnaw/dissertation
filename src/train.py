@@ -227,6 +227,29 @@ def train(
     test_metrics = trainer.evaluate(datasets["test"], metric_key_prefix="test")
     inference_seconds = time.perf_counter() - inference_started
 
+    # Per-example predictions are written out so that performance can be broken
+    # down afterwards by directness, disclosure type, and source community.
+    # Aggregate metrics can conceal poor performance on implicit disclosures,
+    # which are the cases this project is most interested in, so the breakdown
+    # is not optional.
+    predictions = trainer.predict(datasets["test"])
+    logits = predictions.predictions
+    probs = 1 / (1 + np.exp(-logits[:, 1] + logits[:, 0]))
+    preds = (probs >= 0.5).astype(int)
+
+    with (output_dir / "test_predictions.jsonl").open("w") as handle:
+        for record, prob, pred in zip(test_records, probs, preds):
+            handle.write(json.dumps({
+                "post_id": record.get("post_id"),
+                "source": record.get("source"),
+                "directness": record.get("directness"),
+                "disclosure_type": record.get("disclosure_type"),
+                "annotator_confidence": record.get("confidence"),
+                "label": int(bool(record[label_key])),
+                "pred": int(pred),
+                "prob": round(float(prob), 4),
+            }) + "\n")
+
     result = {
         "model": model_name,
         "noise_rate": noise_rate,
