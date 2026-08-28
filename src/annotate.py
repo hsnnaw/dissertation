@@ -23,6 +23,22 @@ from .llm import get_backend
 from .parsing import Label, ParseFailure, parse_response
 from .prompts import SYSTEM_PROMPT, build
 
+# Generation caps, per strategy. The label JSON is roughly 60 tokens, so the
+# direct strategies need little room and a tight cap is a real speed win:
+# batched generation runs until every sequence in the batch has finished.
+#
+# The CoT strategies are different in kind. They emit up to three sentences of
+# reasoning BEFORE the JSON, so a cap sized for the label alone lets the
+# reasoning consume the whole budget and the JSON never appears. That is a
+# parse failure on every post, which would quietly invalidate the annotation
+# strategy comparison rather than failing loudly.
+MAX_TOKENS_BY_STRATEGY = {
+    "zero_shot": 128,
+    "few_shot": 128,
+    "cot": 384,
+    "few_shot_cot": 384,
+}
+
 
 def load_done_ids(path: Path) -> set[str]:
     """Post ids already present in the output, so a rerun resumes."""
@@ -67,9 +83,12 @@ def run(
     limit: int | None = None,
     text_field: str = "text",
     id_field: str = "post_id",
-    max_tokens: int = 256,
+    max_tokens: int | None = None,
     sort_by_length: bool = True,
 ) -> dict:
+    if max_tokens is None:
+        max_tokens = MAX_TOKENS_BY_STRATEGY.get(strategy, 256)
+
     backend_kwargs = {"model": model} if model else {}
     if backend_kind == "transformers" and model:
         backend_kwargs = {"model_id": model}
@@ -149,9 +168,11 @@ def main():
                         help="Annotate only the first N posts. Use for smoke tests.")
     parser.add_argument("--text-field", default="text")
     parser.add_argument("--id-field", default="post_id")
-    parser.add_argument("--max-tokens", type=int, default=256,
-                        help="Generation cap. The label JSON is far shorter, "
-                             "but setting this below the longest legitimate "
+    parser.add_argument("--max-tokens", type=int, default=None,
+                        help="Generation cap. Defaults to a per-strategy value: "
+                             "tight for the direct strategies, roomy for the "
+                             "CoT ones, which emit reasoning before the JSON. "
+                             "Setting this below the longest legitimate "
                              "response truncates it into a parse failure.")
     parser.add_argument("--no-sort-by-length", action="store_true",
                         help="Annotate in file order. Slower, because batches "

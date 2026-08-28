@@ -136,6 +136,19 @@ def train(
 
     print(f"train={len(train_records)} val={len(val_records)} test={len(test_records)}")
 
+    # A split with only one class produces meaningless metrics: accuracy goes
+    # to 1.0 while precision, recall and F1 all go to 0, which looks like a
+    # result but is not one. Surface it loudly rather than letting it into the
+    # results table.
+    for name, records in [("train", train_records), ("val", val_records),
+                          ("test", test_records)]:
+        positives = sum(bool(r[label_key]) for r in records)
+        rate = positives / len(records) if records else 0
+        print(f"  {name}: {positives}/{len(records)} positive ({rate:.1%})")
+        if records and (positives == 0 or positives == len(records)):
+            print(f"\n  WARNING: {name} split contains a single class. "
+                  f"Metrics from this run are not interpretable.")
+
     if noise_rate > 0:
         train_records, flipped = inject_noise(train_records, noise_rate,
                                               label_key, seed)
