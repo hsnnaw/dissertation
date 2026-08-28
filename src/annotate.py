@@ -67,6 +67,8 @@ def run(
     limit: int | None = None,
     text_field: str = "text",
     id_field: str = "post_id",
+    max_tokens: int = 256,
+    sort_by_length: bool = True,
 ) -> dict:
     backend_kwargs = {"model": model} if model else {}
     if backend_kind == "transformers" and model:
@@ -81,8 +83,17 @@ def run(
     done = load_done_ids(output_path)
     pending = [p for p in posts if p["post_id"] not in done]
 
+    if sort_by_length:
+        # Batches pad to their longest member, so mixing a 200-character post
+        # with a 6000-character one wastes most of the batch on padding.
+        # Grouping similar lengths together cuts that. Output order changes,
+        # which is harmless: records are keyed by post_id and resumption
+        # matches on it.
+        pending.sort(key=lambda p: len(p["text"]))
+
     print(f"{len(posts)} posts, {len(done)} already annotated, {len(pending)} to do")
-    print(f"backend={backend.name} strategy={strategy}")
+    print(f"backend={backend.name} strategy={strategy} "
+          f"batch_size={batch_size} max_tokens={max_tokens}")
 
     stats = {"ok": 0, "failed": 0, "total_latency_s": 0.0}
 
@@ -90,7 +101,8 @@ def run(
         for start in tqdm(range(0, len(pending), batch_size), desc="annotating"):
             chunk = pending[start:start + batch_size]
             prompts = [build(strategy, p["text"]) for p in chunk]
-            generations = backend.generate_batch(SYSTEM_PROMPT, prompts)
+            generations = backend.generate_batch(SYSTEM_PROMPT, prompts,
+                                                 max_tokens=max_tokens)
 
             for post, generation in zip(chunk, generations):
                 parsed = parse_response(generation.text)
@@ -137,6 +149,13 @@ def main():
                         help="Annotate only the first N posts. Use for smoke tests.")
     parser.add_argument("--text-field", default="text")
     parser.add_argument("--id-field", default="post_id")
+    parser.add_argument("--max-tokens", type=int, default=256,
+                        help="Generation cap. The label JSON is far shorter, "
+                             "but setting this below the longest legitimate "
+                             "response truncates it into a parse failure.")
+    parser.add_argument("--no-sort-by-length", action="store_true",
+                        help="Annotate in file order. Slower, because batches "
+                             "pad to their longest member.")
     args = parser.parse_args()
 
     run(
@@ -149,6 +168,8 @@ def main():
         limit=args.limit,
         text_field=args.text_field,
         id_field=args.id_field,
+        max_tokens=args.max_tokens,
+        sort_by_length=not args.no_sort_by_length,
     )
 
 
