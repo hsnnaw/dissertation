@@ -128,13 +128,20 @@ class TransformersBackend(Backend):
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
 
-        kwargs = {"device_map": self._device_map, "torch_dtype": torch.bfloat16}
+        # bfloat16 needs Ampere or newer. A Colab T4 is Turing, where bf16 is
+        # unaccelerated and the 4-bit kernels are unreliable, so fall back to
+        # float16 there.
+        dtype = torch.bfloat16
+        if torch.cuda.is_available() and torch.cuda.get_device_capability()[0] < 8:
+            dtype = torch.float16
+
+        kwargs = {"device_map": self._device_map, "torch_dtype": dtype}
         if self._load_in_4bit:
             from transformers import BitsAndBytesConfig
 
             kwargs["quantization_config"] = BitsAndBytesConfig(
                 load_in_4bit=True,
-                bnb_4bit_compute_dtype=torch.bfloat16,
+                bnb_4bit_compute_dtype=dtype,
                 bnb_4bit_quant_type="nf4",
                 bnb_4bit_use_double_quant=True,
             )
