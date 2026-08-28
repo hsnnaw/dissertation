@@ -25,11 +25,20 @@ from collections import Counter
 from pathlib import Path
 
 
-def load_labelled(path: Path, drop_failures: bool = True) -> list[dict]:
+def load_labelled(
+    path: Path,
+    drop_failures: bool = True,
+    posts_path: Path | None = None,
+) -> list[dict]:
     """
     Read annotation output. Parse failures carry an 'error' key instead of a
     label and are dropped from training by default, but their count is reported
     because the failure rate is a result in its own right.
+
+    The annotation output deliberately does not carry post text, so training
+    needs it joined back from the posts file by post_id. Pass posts_path to do
+    that. Records whose text cannot be found are dropped and counted, since a
+    record with no text cannot be trained on.
     """
     records, failures = [], 0
     with path.open() as handle:
@@ -48,6 +57,29 @@ def load_labelled(path: Path, drop_failures: bool = True) -> list[dict]:
         rate = failures / (len(records) + failures)
         print(f"  {failures} parse failures ({rate:.1%}) "
               f"{'dropped' if drop_failures else 'kept'}")
+
+    if posts_path is not None:
+        text_by_id = {}
+        with Path(posts_path).open() as handle:
+            for line in handle:
+                line = line.strip()
+                if not line:
+                    continue
+                post = json.loads(line)
+                text_by_id[str(post["post_id"])] = post["text"]
+
+        joined, missing = [], 0
+        for record in records:
+            text = text_by_id.get(str(record.get("post_id", "")))
+            if text is None:
+                missing += 1
+                continue
+            joined.append({**record, "text": text})
+
+        if missing:
+            print(f"  {missing} records dropped, no matching post text")
+        records = joined
+
     return records
 
 
@@ -129,6 +161,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, required=True,
                         help="Annotated JSONL from src.annotate")
+    parser.add_argument("--posts", type=Path, required=True,
+                        help="Posts JSONL the annotations came from. Training "
+                             "needs the text, which the annotations do not carry.")
     parser.add_argument("--outdir", type=Path,
                         default=Path("data/processed/splits"))
     parser.add_argument("--mode", choices=["random", "subreddit"],
@@ -140,7 +175,7 @@ def main():
     args = parser.parse_args()
 
     print(f"reading {args.input}")
-    records = load_labelled(args.input)
+    records = load_labelled(args.input, posts_path=args.posts)
     print(f"  {len(records)} labelled records")
 
     if args.mode == "random":
