@@ -47,6 +47,69 @@ SCRUBBERS = [
 QUOTE_LINE = re.compile(r"^\s*>", re.MULTILINE)
 
 
+# --------------------------------------------------------------------------
+# Low et al. (2020) dataset structure
+#
+# Files are named {subreddit}_{timeframe}_features_tfidf_256.csv. Note that
+# "post" and "pre" in these filenames are TIMEFRAMES, not post types:
+#
+#   post  Jan 1 to Apr 20 2020   (mid-pandemic)
+#   pre   Dec 2018 to Dec 2019   (baseline year)
+#   2019  Jan 1 to Apr 20 2019   (seasonal control)
+#   2018  Jan 1 to Apr 20 2018   (seasonal control)
+#
+# The community taxonomy below is from the dataset documentation. It matters
+# for two reasons: the non-mental-health subreddits supply the negative
+# examples, and holding out whole communities for the generalisation test is
+# only meaningful if the held-out set spans both groups.
+# --------------------------------------------------------------------------
+
+TIMEFRAMES = {"post", "pre", "2019", "2018"}
+
+MH_SUPPORT = {
+    "EDAnonymous", "addiction", "alcoholism", "adhd", "anxiety", "autism",
+    "bipolarreddit", "bpd", "depression", "healthanxiety", "lonely", "ptsd",
+    "schizophrenia", "socialanxiety", "suicidewatch",
+}
+
+MH_BROAD = {"mentalhealth", "COVID19_support"}
+
+NON_MH = {
+    "conspiracy", "divorce", "fitness", "guns", "jokes", "legaladvice",
+    "meditation", "parenting", "personalfinance", "relationships", "teaching",
+}
+
+
+def community_group(subreddit: str) -> str:
+    """Which of the three documented groups a subreddit belongs to."""
+    lowered = subreddit.lower()
+    for name in MH_SUPPORT:
+        if name.lower() == lowered:
+            return "mh_support"
+    for name in MH_BROAD:
+        if name.lower() == lowered:
+            return "mh_broad"
+    for name in NON_MH:
+        if name.lower() == lowered:
+            return "non_mh"
+    return "unknown"
+
+
+def parse_filename(stem: str) -> tuple[str, str]:
+    """
+    Split a dataset filename stem into (subreddit, timeframe).
+
+    Handles the documented pattern and degrades gracefully on anything else,
+    because a stem that does not match should still yield a usable subreddit
+    name rather than raising.
+    """
+    stem = re.sub(r"_features.*$", "", stem)
+    parts = stem.split("_")
+    if len(parts) > 1 and parts[-1] in TIMEFRAMES:
+        return "_".join(parts[:-1]), parts[-1]
+    return stem, "unknown"
+
+
 def scrub(text: str) -> str:
     """Remove identifier-shaped strings from post text."""
     for pattern, replacement in SCRUBBERS:
@@ -127,9 +190,9 @@ def load_csv_directory(
                   f"(has {list(frame.columns)[:6]}...)")
             continue
 
-        # Subreddit comes from the filename, which is how the dataset is
-        # organised. Strip any trailing date window.
-        subreddit = re.sub(r"_(pre|post)?_?\d{4}.*$", "", path.stem)
+        # Subreddit and timeframe both come from the filename, which is how
+        # the dataset is organised.
+        subreddit, timeframe = parse_filename(path.stem)
 
         body = frame[text_col].fillna("").astype(str)
 
@@ -154,6 +217,8 @@ def load_csv_directory(
             "raw_id": frame.get("id", pd.Series(range(len(frame)))).astype(str),
             "text": combined,
             "subreddit": subreddit,
+            "timeframe": timeframe,
+            "group": community_group(subreddit),
             "source_file": path.name,
         }))
 
@@ -227,6 +292,14 @@ def prepare(
     print(f"reading CSVs from {input_dir}")
     frame = load_csv_directory(input_dir)
     print(f"  {len(frame)} rows across {frame['subreddit'].nunique()} subreddits")
+    print("  by community group:")
+    for name, count in frame["group"].value_counts().items():
+        print(f"    {name:12} {count:>8}")
+    unknown = sorted(frame.loc[frame["group"] == "unknown", "subreddit"].unique())
+    if unknown:
+        # Worth surfacing rather than silently bucketing: an unrecognised name
+        # usually means the filename pattern differs from the documentation.
+        print(f"  unrecognised subreddits: {unknown}")
 
     frame, counts = normalise(frame, min_chars, max_chars)
 
