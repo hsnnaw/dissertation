@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
+import random
 from pathlib import Path
 
 from tqdm import tqdm
@@ -85,6 +85,7 @@ def run(
     id_field: str = "post_id",
     max_tokens: int | None = None,
     sort_by_length: bool = True,
+    seed: int = 42,
 ) -> dict:
     if max_tokens is None:
         max_tokens = MAX_TOKENS_BY_STRATEGY.get(strategy, 256)
@@ -105,10 +106,24 @@ def run(
     if sort_by_length:
         # Batches pad to their longest member, so mixing a 200-character post
         # with a 6000-character one wastes most of the batch on padding.
-        # Grouping similar lengths together cuts that. Output order changes,
-        # which is harmless: records are keyed by post_id and resumption
-        # matches on it.
+        # Grouping similar lengths together cuts that.
+        #
+        # But annotating in ascending length order means an interrupted run
+        # leaves only the shortest posts, and a run that takes hours will be
+        # interrupted. That subset is not representative: length plausibly
+        # relates to how disclosure is expressed, so a classifier trained on
+        # it would be trained on a skewed corpus.
+        #
+        # Sorting into batches and then shuffling the batch order gives both.
+        # Each batch is still length-homogeneous, so the padding saving holds,
+        # while any prefix of the run is a fair sample of the whole.
         pending.sort(key=lambda p: len(p["text"]))
+        batches = [pending[i:i + batch_size]
+                   for i in range(0, len(pending), batch_size)]
+        random.Random(seed).shuffle(batches)
+    else:
+        batches = [pending[i:i + batch_size]
+                   for i in range(0, len(pending), batch_size)]
 
     print(f"{len(posts)} posts, {len(done)} already annotated, {len(pending)} to do")
     print(f"backend={backend.name} strategy={strategy} "
@@ -117,8 +132,7 @@ def run(
     stats = {"ok": 0, "failed": 0, "total_latency_s": 0.0}
 
     with output_path.open("a") as out:
-        for start in tqdm(range(0, len(pending), batch_size), desc="annotating"):
-            chunk = pending[start:start + batch_size]
+        for chunk in tqdm(batches, desc="annotating"):
             prompts = [build(strategy, p["text"]) for p in chunk]
             generations = backend.generate_batch(SYSTEM_PROMPT, prompts,
                                                  max_tokens=max_tokens)
