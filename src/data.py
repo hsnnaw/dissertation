@@ -256,7 +256,16 @@ def normalise(
     frame = frame.drop_duplicates(subset="text_hash", keep="first")
     counts["dropped_duplicate"] = before - len(frame)
 
-    frame["post_id"] = frame["raw_id"].map(hash_id)
+    # Derive the id from the text, not from raw_id. These files have no id
+    # column, so raw_id falls back to the row number WITHIN EACH FILE: row 0
+    # of depression and row 0 of jokes both become "0" and hash identically.
+    # Colliding ids break resumption, which skips posts that were never
+    # annotated, and worse, they break the join that puts text back with
+    # labels, which would pair a label with another post's text.
+    #
+    # text_hash is already computed above for deduplication and is unique by
+    # construction, since exact duplicates have just been dropped.
+    frame["post_id"] = frame["text_hash"].map(hash_id)
     frame = frame.drop(columns=["raw_id", "text_hash"])
 
     counts["output"] = len(frame)
