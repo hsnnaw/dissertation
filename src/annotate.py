@@ -128,6 +128,7 @@ def run(
     sort_by_length: bool = True,
     seed: int = 42,
     max_batch_chars: int = 80_000,
+    sync_every: int = 5,
 ) -> dict:
     if max_tokens is None:
         max_tokens = MAX_TOKENS_BY_STRATEGY.get(strategy, 256)
@@ -175,8 +176,16 @@ def run(
 
     stats = {"ok": 0, "failed": 0, "total_latency_s": 0.0}
 
-    with output_path.open("a") as out:
-        for chunk in tqdm(batches, desc="annotating"):
+    # Reopening the output periodically is what actually gets records onto
+    # network storage. On a Drive mount, flush() only pushes into the FUSE
+    # layer; the upload happens when the file is closed. Holding it open for
+    # a three hour run means a runtime recycle loses everything written since
+    # the start, which is precisely what the Drive location was meant to
+    # prevent. Closing every few batches costs nothing and makes the file on
+    # Drive genuinely current.
+    out = output_path.open("a")
+    try:
+        for index, chunk in enumerate(tqdm(batches, desc="annotating")):
             prompts = [build(strategy, p["text"]) for p in chunk]
             generations = backend.generate_batch(SYSTEM_PROMPT, prompts,
                                                  max_tokens=max_tokens)
@@ -201,6 +210,12 @@ def run(
                 stats["total_latency_s"] += generation.latency_s
                 out.write(json.dumps(record) + "\n")
             out.flush()
+
+            if (index + 1) % sync_every == 0:
+                out.close()
+                out = output_path.open("a")
+    finally:
+        out.close()
 
     total = stats["ok"] + stats["failed"]
     if total:
