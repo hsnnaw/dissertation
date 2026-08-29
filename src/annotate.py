@@ -73,6 +73,47 @@ def load_posts(path: Path, text_field: str, id_field: str) -> list[dict]:
     return posts
 
 
+def pack_batches(
+    posts: list[dict],
+    strategy: str,
+    batch_size: int,
+    max_batch_chars: int,
+) -> list[list[dict]]:
+    """
+    Group posts into batches under a character budget as well as a count cap.
+
+    A fixed count is the wrong unit. Generation pads every sequence in a batch
+    to the longest one, so the memory a batch needs is roughly the longest
+    prompt times the number of prompts. Sixteen 6,000-character posts is four
+    times the footprint of sixteen 1,000-character ones, and on a 16GB card
+    holding an 8B model the large end does not fit.
+
+    Posts arrive sorted by length, so packing greedily keeps batches
+    length-homogeneous: short posts still get full-size batches, and only the
+    long tail is cut down to fit.
+    """
+    overhead = len(build(strategy, ""))
+    batches: list[list[dict]] = []
+    current: list[dict] = []
+    longest = 0
+
+    for post in posts:
+        length = len(post["text"])
+        peak = max(longest, length)
+        # Cost if this post joined: every prompt padded out to the longest.
+        if current and (len(current) + 1 > batch_size
+                        or (peak + overhead) * (len(current) + 1) > max_batch_chars):
+            batches.append(current)
+            current, longest = [post], length
+        else:
+            current.append(post)
+            longest = peak
+
+    if current:
+        batches.append(current)
+    return batches
+
+
 def run(
     input_path: Path,
     output_path: Path,
@@ -86,6 +127,7 @@ def run(
     max_tokens: int | None = None,
     sort_by_length: bool = True,
     seed: int = 42,
+    max_batch_chars: int = 80_000,
 ) -> dict:
     if max_tokens is None:
         max_tokens = MAX_TOKENS_BY_STRATEGY.get(strategy, 256)
@@ -118,16 +160,18 @@ def run(
         # Each batch is still length-homogeneous, so the padding saving holds,
         # while any prefix of the run is a fair sample of the whole.
         pending.sort(key=lambda p: len(p["text"]))
-        batches = [pending[i:i + batch_size]
-                   for i in range(0, len(pending), batch_size)]
+        batches = pack_batches(pending, strategy, batch_size, max_batch_chars)
         random.Random(seed).shuffle(batches)
     else:
-        batches = [pending[i:i + batch_size]
-                   for i in range(0, len(pending), batch_size)]
+        batches = pack_batches(pending, strategy, batch_size, max_batch_chars)
 
+    sizes = [len(b) for b in batches]
     print(f"{len(posts)} posts, {len(done)} already annotated, {len(pending)} to do")
     print(f"backend={backend.name} strategy={strategy} "
-          f"batch_size={batch_size} max_tokens={max_tokens}")
+          f"max_tokens={max_tokens}")
+    if sizes:
+        print(f"{len(batches)} batches, size {min(sizes)}-{max(sizes)} "
+              f"(cap {batch_size}, budget {max_batch_chars:,} chars)")
 
     stats = {"ok": 0, "failed": 0, "total_latency_s": 0.0}
 
