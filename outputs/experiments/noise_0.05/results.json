@@ -1,0 +1,21 @@
+{
+  "model": "roberta-base",
+  "noise_rate": 0.05,
+  "class_weights": [
+    0.8451690821256038,
+    1.2242827151854443
+  ],
+  "n_train": 3499,
+  "n_test": 751,
+  "train_seconds": 1136.3,
+  "inference_seconds": 22.7,
+  "ms_per_post": 30.23,
+  "params_millions": 124.6,
+  "test_loss": 0.1896,
+  "test_accuracy": 0.9414,
+  "test_precision": 0.91,
+  "test_recall": 0.9465,
+  "test_f1": 0.9279,
+  "test_macro_f1": 0.9393,
+  "test_auc": 0.9811
+}

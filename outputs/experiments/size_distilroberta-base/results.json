@@ -1,0 +1,21 @@
+{
+  "model": "distilroberta-base",
+  "noise_rate": 0.0,
+  "class_weights": [
+    0.8307217473884141,
+    1.2559224694903086
+  ],
+  "n_train": 3499,
+  "n_test": 751,
+  "train_seconds": 569.0,
+  "inference_seconds": 11.7,
+  "ms_per_post": 15.57,
+  "params_millions": 82.1,
+  "test_loss": 0.2232,
+  "test_accuracy": 0.9374,
+  "test_precision": 0.9437,
+  "test_recall": 0.8963,
+  "test_f1": 0.9194,
+  "test_macro_f1": 0.9341,
+  "test_auc": 0.9811
+}
