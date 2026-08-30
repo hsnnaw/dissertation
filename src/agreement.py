@@ -138,8 +138,13 @@ def cmd_label(args):
     with args.output.open("a") as handle:
         for i, post in enumerate(pending, 1):
             print("=" * 74)
-            print(f"[{i}/{len(pending)}]")
-            print(post["text"][:1200])
+            # The whole post, not a preview. Truncating here would mean the
+            # reviewer judges less text than the model was given, so any
+            # disagreement would partly measure who saw more rather than who
+            # judged differently. Posts run to 6,000 characters and a named
+            # condition can appear anywhere in them.
+            print(f"[{i}/{len(pending)}]  {len(post['text'])} chars")
+            print(post["text"])
             print("-" * 74)
 
             answer = input("disclosure? (y/n/s/q) ").strip().lower()
