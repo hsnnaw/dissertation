@@ -1,0 +1,8 @@
+{
+  "n": 200,
+  "raw_agreement": 0.81,
+  "kappa": 0.6208,
+  "interpretation": "substantial",
+  "model_only_positive": 25,
+  "human_only_positive": 13
+}
