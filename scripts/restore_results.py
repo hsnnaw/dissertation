@@ -26,6 +26,34 @@ import json
 from pathlib import Path
 
 RESULTS: dict[str, dict] = {
+    "baseline_random": {
+        "model": "tfidf-logreg", "noise_rate": 0.0,
+        "n_train": 3499, "n_test": 751,
+        "train_seconds": 6.6, "inference_seconds": 1.031, "ms_per_post": 1.372,
+        "n_features": 100000, "test_loss": None, "test_accuracy": 0.9028,
+        "test_precision": 0.8717, "test_recall": 0.8863, "test_f1": 0.8789,
+        "test_macro_f1": 0.8989, "test_auc": 0.9617,
+        "by_directness": {
+            "explicit": {"n_positive": 58, "f1": 0.6434,
+                         "precision": 0.5412, "recall": 0.7931},
+            "implicit": {"n_positive": 241, "f1": 0.8778,
+                         "precision": 0.8488, "recall": 0.9087},
+        },
+    },
+    "baseline_subreddit": {
+        "model": "tfidf-logreg", "noise_rate": 0.0,
+        "n_train": 3343, "n_test": 1065,
+        "train_seconds": 7.8, "inference_seconds": 1.241, "ms_per_post": 1.165,
+        "n_features": 100000, "test_loss": None, "test_accuracy": 0.8789,
+        "test_precision": 0.8402, "test_recall": 0.9017, "test_f1": 0.8698,
+        "test_macro_f1": 0.8783, "test_auc": 0.9465,
+        "by_directness": {
+            "explicit": {"n_positive": 67, "f1": 0.532,
+                         "precision": 0.3971, "recall": 0.806},
+            "implicit": {"n_positive": 411, "f1": 0.8667,
+                         "precision": 0.8214, "recall": 0.9173},
+        },
+    },
     "gen_seen": {
         "model": "roberta-base", "noise_rate": 0.0,
         "class_weights": [0.8307217473884141, 1.2559224694903086],

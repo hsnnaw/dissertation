@@ -1,0 +1,31 @@
+{
+  "model": "tfidf-logreg",
+  "noise_rate": 0.0,
+  "n_train": 3343,
+  "n_test": 1065,
+  "train_seconds": 7.8,
+  "inference_seconds": 1.241,
+  "ms_per_post": 1.165,
+  "n_features": 100000,
+  "test_loss": null,
+  "test_accuracy": 0.8789,
+  "test_precision": 0.8402,
+  "test_recall": 0.9017,
+  "test_f1": 0.8698,
+  "test_macro_f1": 0.8783,
+  "test_auc": 0.9465,
+  "by_directness": {
+    "explicit": {
+      "n_positive": 67,
+      "f1": 0.532,
+      "precision": 0.3971,
+      "recall": 0.806
+    },
+    "implicit": {
+      "n_positive": 411,
+      "f1": 0.8667,
+      "precision": 0.8214,
+      "recall": 0.9173
+    }
+  }
+}
