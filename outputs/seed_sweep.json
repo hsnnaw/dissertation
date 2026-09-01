@@ -1,0 +1,105 @@
+{
+  "gen_seen": {
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "test_f1": {
+      "mean": 0.9207,
+      "sd": 0.0105,
+      "min": 0.9121,
+      "max": 0.9324,
+      "values": [
+        0.9175,
+        0.9324,
+        0.9121
+      ]
+    },
+    "test_macro_f1": {
+      "mean": 0.9339,
+      "sd": 0.0092,
+      "min": 0.9266,
+      "max": 0.9442,
+      "values": [
+        0.9308,
+        0.9442,
+        0.9266
+      ]
+    },
+    "test_auc": {
+      "mean": 0.9848,
+      "sd": 0.0013,
+      "min": 0.9836,
+      "max": 0.9861,
+      "values": [
+        0.9847,
+        0.9836,
+        0.9861
+      ]
+    }
+  },
+  "gen_unseen": {
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "test_f1": {
+      "mean": 0.9113,
+      "sd": 0.0046,
+      "min": 0.9065,
+      "max": 0.9157,
+      "values": [
+        0.9118,
+        0.9065,
+        0.9157
+      ]
+    },
+    "test_macro_f1": {
+      "mean": 0.9164,
+      "sd": 0.0043,
+      "min": 0.9123,
+      "max": 0.9208,
+      "values": [
+        0.9162,
+        0.9123,
+        0.9208
+      ]
+    },
+    "test_auc": {
+      "mean": 0.9785,
+      "sd": 0.0022,
+      "min": 0.9761,
+      "max": 0.9802,
+      "values": [
+        0.9802,
+        0.9761,
+        0.9793
+      ]
+    }
+  },
+  "generalisation_gap": {
+    "test_f1": {
+      "gap": 0.0094,
+      "pooled_sd": 0.0081,
+      "gap_in_sds": 1.16
+    },
+    "test_macro_f1": {
+      "gap": 0.0175,
+      "pooled_sd": 0.0072,
+      "gap_in_sds": 2.44
+    },
+    "test_auc": {
+      "gap": 0.0063,
+      "pooled_sd": 0.0018,
+      "gap_in_sds": 3.49
+    }
+  },
+  "class_weight_ablation": {
+    "weighted_mean": 0.9207,
+    "weighted_sd": 0.0105,
+    "unweighted": 0.9161,
+    "difference_in_sds": 0.44
+  }
+}
